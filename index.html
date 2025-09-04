@@ -2,183 +2,282 @@
 <html lang="vi">
 <head>
   <meta charset="UTF-8">
-  <title>Tra cứu POSID & Serial</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <!-- Bootstrap -->
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-  <!-- Bootstrap Icons -->
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
-  <!-- SheetJS -->
-  <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+  <title>Tra cứu thông tin thiết bị</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
   <style>
-    body { background: #f9fafc; display: flex; flex-direction: column; min-height: 100vh; }
-    header { background: #0d6efd; color: white; padding: 1rem; }
-    footer { background: #0d6efd; color: white; text-align: center; padding: 0.5rem; margin-top: auto; }
-    .nav-tabs .nav-link.active { background-color: #e7f1ff; border-color: #0d6efd #0d6efd #fff; }
-    .tab-content { padding: 1rem; background: white; border: 1px solid #dee2e6; border-top: none; border-radius: 0 0 .5rem .5rem; }
-    table { font-size: 0.9rem; }
+    body {
+      background-color: #f4f6f9;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+    header, footer {
+      background-color: #0d6efd;
+      color: white;
+      padding: 15px;
+      text-align: center;
+    }
+    footer {
+      margin-top: auto;
+    }
+    .card {
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+      border-radius: 10px;
+    }
+    table {
+      font-size: 14px;
+      white-space: nowrap;
+    }
+    th, td {
+      text-align: center;
+      vertical-align: middle;
+    }
+    #loaderOverlay {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(255,255,255,0.95);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      flex-direction: column;
+    }
+    .nav-tabs .nav-link {
+      color: white;
+      font-weight: 500;
+    }
+    .nav-tabs .nav-link.active {
+      font-weight: bold;
+    }
+    .tab-posid { background-color: #0d6efd; }
+    .tab-serial { background-color: #198754; }
+    .tab-vitri { background-color: #fd7e14; }
   </style>
 </head>
 <body>
-<header>
-  <h3><i class="bi bi-database"></i> Hệ thống tra cứu dữ liệu</h3>
-</header>
+  <header>
+    <h2><i class="bi bi-hdd-network"></i> Hệ thống tra cứu thông tin thiết bị</h2>
+  </header>
 
-<div class="container my-4">
-  <!-- Tabs -->
-  <ul class="nav nav-tabs" id="dataTabs" role="tablist">
-    <li class="nav-item" role="presentation">
-      <button class="nav-link active" id="posid-tab" data-bs-toggle="tab" data-bs-target="#posid" type="button" role="tab">
-        <i class="bi bi-search"></i> Tra cứu POSID
-      </button>
-    </li>
-    <li class="nav-item" role="presentation">
-      <button class="nav-link" id="serial-tab" data-bs-toggle="tab" data-bs-target="#serial" type="button" role="tab">
-        <i class="bi bi-hdd-network"></i> Tra cứu Serial
-      </button>
-    </li>
-    <li class="nav-item" role="presentation">
-      <button class="nav-link" id="vitri-tab" data-bs-toggle="tab" data-bs-target="#vitri" type="button" role="tab">
-        <i class="bi bi-geo-alt"></i> Vị trí thiết bị
-      </button>
-    </li>
-  </ul>
+  <div id="loaderOverlay">
+    <div class="spinner-border text-primary" role="status" style="width: 4rem; height: 4rem;"></div>
+    <p class="mt-3">Đang tải dữ liệu, vui lòng chờ...</p>
+  </div>
 
-  <!-- Tab contents -->
-  <div class="tab-content">
-    <!-- MasterAsset -->
-    <div class="tab-pane fade show active" id="posid" role="tabpanel">
-      <div class="input-group mb-3">
-        <input type="text" id="posidInput" class="form-control" placeholder="Nhập POSID hoặc POSID cũ">
-        <button class="btn btn-primary" onclick="searchPOSID()">Tìm</button>
+  <div class="container py-5">
+    <ul class="nav nav-tabs" id="myTab" role="tablist">
+      <li class="nav-item">
+        <button class="nav-link active tab-posid" id="posid-tab" data-bs-toggle="tab" data-bs-target="#posid">
+          <i class="bi bi-building"></i> POSID
+        </button>
+      </li>
+      <li class="nav-item">
+        <button class="nav-link tab-serial" id="serial-tab" data-bs-toggle="tab" data-bs-target="#serial">
+          <i class="bi bi-cpu"></i> Serial
+        </button>
+      </li>
+      <li class="nav-item">
+        <button class="nav-link tab-vitri" id="vitri-tab" data-bs-toggle="tab" data-bs-target="#vitri">
+          <i class="bi bi-geo-alt"></i> Vị trí
+        </button>
+      </li>
+    </ul>
+
+    <div class="tab-content mt-3">
+      <!-- POSID -->
+      <div class="tab-pane fade show active" id="posid">
+        <div class="card p-3 mb-4">
+          <div class="row g-2">
+            <div class="col-md-8">
+              <input type="text" id="posidInput" class="form-control" placeholder="Nhập POSID hoặc POSID Cũ" disabled>
+            </div>
+            <div class="col-md-4">
+              <button class="btn btn-primary w-100" id="btnPosid" onclick="searchPOSID()" disabled>
+                <i class="bi bi-search"></i> Tìm kiếm
+              </button>
+            </div>
+          </div>
+        </div>
+        <div id="posidResult"></div>
       </div>
-      <div id="posidResult"></div>
-    </div>
-    <!-- Exp -->
-    <div class="tab-pane fade" id="serial" role="tabpanel">
-      <div class="input-group mb-3">
-        <input type="text" id="serialInput" class="form-control" placeholder="Nhập Serial thiết bị">
-        <button class="btn btn-primary" onclick="searchSerial()">Tìm</button>
+
+      <!-- Serial -->
+      <div class="tab-pane fade" id="serial">
+        <div class="card p-3 mb-4">
+          <div class="row g-2">
+            <div class="col-md-8">
+              <input type="text" id="serialInput" class="form-control" placeholder="Nhập Serial" disabled>
+            </div>
+            <div class="col-md-4">
+              <button class="btn btn-success w-100" id="btnSerial" onclick="searchSerial()" disabled>
+                <i class="bi bi-search"></i> Tìm kiếm
+              </button>
+            </div>
+          </div>
+        </div>
+        <div id="serialResult"></div>
       </div>
-      <div id="serialResult"></div>
-    </div>
-    <!-- Vị trí -->
-    <div class="tab-pane fade" id="vitri" role="tabpanel">
-      <div class="input-group mb-3">
-        <input type="text" id="vitriInput" class="form-control" placeholder="Nhập POSID">
-        <button class="btn btn-primary" onclick="searchVitri()">Tìm</button>
+
+      <!-- Vị trí -->
+      <div class="tab-pane fade" id="vitri">
+        <div class="card p-3 mb-4">
+          <div class="row g-2">
+            <div class="col-md-8">
+              <input type="text" id="vitriInput" class="form-control" placeholder="Nhập POSID để xem vị trí" disabled>
+            </div>
+            <div class="col-md-4">
+              <button class="btn btn-warning w-100" id="btnVitri" onclick="searchVitri()" disabled>
+                <i class="bi bi-search"></i> Tìm kiếm
+              </button>
+            </div>
+          </div>
+        </div>
+        <div id="vitriResult"></div>
       </div>
-      <div id="vitriResult"></div>
     </div>
   </div>
-</div>
 
-<footer>
-  <small>&copy; 2025 Tra cứu dữ liệu POSID & Serial</small>
-</footer>
+  <footer>
+    <p>&copy; 2025 Hệ thống tra cứu thiết bị | <i class="bi bi-database"></i> Powered by Google Sheets</p>
+  </footer>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
-// 1) Link JSON (thay bằng link GitHub Pages/Cloudflare Pages của bạn)
-const JSON_URLS = {
-  master: "https://bgtfs2016-alt.github.io/check_info_all/MasterAsset.json",
-  exp: "https://bgtfs2016-alt.github.io/check_info_all/Exp.json",
-  vitri: "https://bgtfs2016-alt.github.io/check_info_all/Vi_tri_month.json"
-};
+const masterAssetURL = "https://script.google.com/macros/s/AKfycby-i2Lid_qF0qPoBlJBYo5y_8wPci2VYw4DhwYqteVi_0vEO-aSmxsPqnYNbifkYVWw/exec?sheet=MasterAsset"; 
+const expURL = "https://script.google.com/macros/s/AKfycby-i2Lid_qF0qPoBlJBYo5y_8wPci2VYw4DhwYqteVi_0vEO-aSmxsPqnYNbifkYVWw/exec?sheet=Exp"; 
+const vitriURL = "https://script.google.com/macros/s/AKfycby-i2Lid_qF0qPoBlJBYo5y_8wPci2VYw4DhwYqteVi_0vEO-aSmxsPqnYNbifkYVWw/exec?sheet=Vi_tri_month";
 
-let cache = { master: null, exp: null, vitri: null };
-let loading = { master: false, exp: false, vitri: false };
+let masterAssetData = [];
+let expData = [];
+let vitriData = [];
 
-// 2) Spinner khi load
-async function loadJsonOnce(key, holderId) {
-  if (cache[key] || loading[key]) return cache[key];
-  loading[key] = true;
-  const holder = document.getElementById(holderId);
-  const old = holder.innerHTML;
-  holder.innerHTML = `<div class="text-center my-3">
-    <div class="spinner-border" role="status"></div>
-    <div class="mt-2 small text-muted">Đang tải dữ liệu...</div>
-  </div>`;
+async function fetchSheet(url) {
+  const res = await fetch(url);
+  return await res.json();
+}
+
+async function loadData() {
   try {
-    const res = await fetch(JSON_URLS[key], { cache: "force-cache" });
-    cache[key] = await res.json();
-    return cache[key];
-  } catch (e) {
-    holder.innerHTML = `<p class="text-danger">Lỗi tải dữ liệu: ${e}</p>`;
-    throw e;
-  } finally {
-    loading[key] = false;
-    if (!cache[key]) holder.innerHTML = old;
+    masterAssetData = await fetchSheet(masterAssetURL);
+    expData = await fetchSheet(expURL);
+    vitriData = await fetchSheet(vitriURL);
+
+    document.getElementById("loaderOverlay").style.display = "none";
+    document.querySelectorAll("input, button").forEach(el => el.removeAttribute("disabled"));
+  } catch (err) {
+    document.getElementById("loaderOverlay").innerHTML = "<p class='text-danger'>Lỗi tải dữ liệu: " + err + "</p>";
   }
 }
+window.onload = loadData;
 
-// 3) Hàm xuất Excel
-function exportExcel(rows, sheetName, fileName) {
-  const ws = XLSX.utils.json_to_sheet(rows);
+// Export Excel chuẩn
+function exportToExcel(data, filename) {
+  if (!data.length) return;
+  const ws = XLSX.utils.json_to_sheet(data);
   const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, sheetName);
-  XLSX.writeFile(wb, fileName);
+  XLSX.utils.book_append_sheet(wb, ws, "Data");
+  XLSX.writeFile(wb, filename + ".xlsx");
 }
 
-// 4) Tìm kiếm
-async function searchPOSID() {
+// POSID
+function searchPOSID() {
   const posid = document.getElementById("posidInput").value.trim();
-  const data = await loadJsonOnce('master','posidResult');
-  const found = data.filter(r =>
-    String(r["POSID"]||"").trim() === posid ||
-    String(r["POSID Cũ"]||"").trim() === posid
-  );
-  renderTable(found, "posidResult", "Kết quả MasterAsset", "MasterAsset.xlsx");
-}
-
-async function searchSerial() {
-  const serial = document.getElementById("serialInput").value.trim();
-  const data = await loadJsonOnce('exp','serialResult');
-  const found = data.filter(r => String(r["Serial"]||"").trim() === serial);
-  renderTable(found, "serialResult", "Kết quả Exp", "Exp.xlsx");
-}
-
-async function searchVitri() {
-  const posid = document.getElementById("vitriInput").value.trim();
-  const data = await loadJsonOnce('vitri','vitriResult');
-  const found = data.filter(r => String(r["POSID"]||"").trim() === posid);
-  renderTable(found, "vitriResult", "Kết quả Vị trí", "Vitri.xlsx");
-}
-
-// 5) Render bảng kết quả
-function renderTable(rows, holderId, title, fileName) {
-  const box = document.getElementById(holderId);
-  if (!rows.length) {
-    box.innerHTML = `<p class='text-danger'>Không tìm thấy dữ liệu</p>`;
-    return;
+  let html = "";
+  if (posid) {
+    const found = masterAssetData.filter(row =>
+      String(row["POSID"]).trim() === posid ||
+      String(row["POSID Cũ"]).trim() === posid
+    );
+    if (found.length > 0) {
+      html += `<h5>Kết quả MasterAsset:</h5>
+      <button class="btn btn-outline-primary mb-2" onclick='exportToExcel(${JSON.stringify(found)}, "MasterAsset_POSID")'>
+        <i class="bi bi-file-earmark-excel"></i> Xuất Excel
+      </button>
+      <div class="table-responsive"><table class="table table-bordered table-sm table-striped"><thead class="table-primary"><tr>
+        <th>POSID</th><th>POSID Cũ</th><th>ADDRESS</th><th>ADDRESS cũ</th>
+        <th>BGT Code</th><th>PAC DATE</th><th>Retrieval Date</th><th>HWID</th>
+        <th>CPU</th><th>Touchscreen</th><th>Printer</th><th>Scanner</th>
+        <th>KeyBoard</th><th>CDU</th><th>Checkwin</th><th>CISSCO</th>
+        <th>UPS</th><th>TV 1</th><th>TV 2</th>
+      </tr></thead><tbody>`;
+      found.forEach(r => {
+        html += `<tr>
+          <td>${r["POSID"]}</td><td>${r["POSID Cũ"]}</td><td>${r["ADDRESS"]}</td><td>${r["ADDRESS cũ"]}</td>
+          <td>${r["BGT Code"]}</td><td>${r["PAC DATE"]}</td><td>${r["Retrieval Date"]}</td><td>${r["HWID"]}</td>
+          <td>${r["CPU"]}</td><td>${r["Touchscreen"]}</td><td>${r["Printer"]}</td><td>${r["Scanner"]}</td>
+          <td>${r["KeyBoard"]}</td><td>${r["CDU"]}</td><td>${r["Checkwin"]}</td><td>${r["CISSCO"]}</td>
+          <td>${r["UPS"]}</td><td>${r["TV 1"]}</td><td>${r["TV 2"]}</td>
+        </tr>`;
+      });
+      html += `</tbody></table></div>`;
+    } else {
+      html = "<p class='text-danger'>Không tìm thấy POSID</p>";
+    }
   }
-  let headers = Object.keys(rows[0]);
-  let html = `<h5>${title}</h5>
-    <div class="table-responsive"><table class="table table-bordered table-sm">
-    <thead class="table-light"><tr>`;
-  headers.forEach(h => html += `<th>${h}</th>`);
-  html += `</tr></thead><tbody>`;
-  rows.forEach(r => {
-    html += "<tr>";
-    headers.forEach(h => html += `<td>${r[h]||""}</td>`);
-    html += "</tr>";
-  });
-  html += `</tbody></table></div>
-    <button class="btn btn-success btn-sm" onclick='exportExcel(${JSON.stringify(rows)}, "${title}", "${fileName}")'>
-      <i class="bi bi-file-earmark-excel"></i> Xuất Excel
-    </button>`;
-  box.innerHTML = html;
+  document.getElementById("posidResult").innerHTML = html;
 }
 
-// 6) Lazy load khi mở tab
-document.getElementById('posid-tab')?.addEventListener('shown.bs.tab', () => loadJsonOnce('master','posidResult'));
-document.getElementById('serial-tab')?.addEventListener('shown.bs.tab', () => loadJsonOnce('exp','serialResult'));
-document.getElementById('vitri-tab')?.addEventListener('shown.bs.tab', () => loadJsonOnce('vitri','vitriResult'));
+// Serial
+function searchSerial() {
+  const serial = document.getElementById("serialInput").value.trim();
+  let html = "";
+  if (serial) {
+    const found = expData.filter(row => String(row["Serial"]).trim() === serial);
+    if (found.length > 0) {
+      html += `<h5>Kết quả Exp:</h5>
+      <button class="btn btn-outline-success mb-2" onclick='exportToExcel(${JSON.stringify(found)}, "Exp_Serial")'>
+        <i class="bi bi-file-earmark-excel"></i> Xuất Excel
+      </button>
+      <div class="table-responsive"><table class="table table-bordered table-sm table-striped"><thead class="table-success"><tr>
+        <th>Loại thiết bị</th><th>Serial</th><th>Ngày sản xuất</th><th>Ngày đưa vào sử dụng lần đầu</th>
+        <th>Tình trạng thiết bị</th><th>Tình trạng ghi nhận</th><th>Số chứng thư giám định</th>
+        <th>Ngày giám định</th><th>Năm thay thế</th><th>Check hạn</th>
+      </tr></thead><tbody>`;
+      found.forEach(r => {
+        html += `<tr>
+          <td>${r["Loại thiết bị"]}</td><td>${r["Serial"]}</td><td>${r["Ngày sản xuất"]}</td><td>${r["Ngày đưa vào sử dụng lần đầu"]}</td>
+          <td>${r["Tình trạng thiết bị"]}</td><td>${r["Tình trạng ghi nhận"]}</td><td>${r["Số chứng thư giám định"]}</td>
+          <td>${r["Ngày giám định"]}</td><td>${r["Năm thay thế"]}</td><td>${r["Check hạn"]}</td>
+        </tr>`;
+      });
+      html += `</tbody></table></div>`;
+    } else {
+      html = "<p class='text-danger'>Không tìm thấy Serial</p>";
+    }
+  }
+  document.getElementById("serialResult").innerHTML = html;
+}
 
-// Tải sớm tab mặc định
-loadJsonOnce('master','posidResult');
+// Vị trí
+function searchVitri() {
+  const posid = document.getElementById("vitriInput").value.trim();
+  let html = "";
+  if (posid) {
+    const found = vitriData.filter(row => String(row["POSID"]).trim() === posid);
+    if (found.length > 0) {
+      html += `<h5>Kết quả Vi_tri_month:</h5>
+      <button class="btn btn-outline-warning mb-2" onclick='exportToExcel(${JSON.stringify(found)}, "Vitri_POSID")'>
+        <i class="bi bi-file-earmark-excel"></i> Xuất Excel
+      </button>
+      <div class="table-responsive"><table class="table table-bordered table-sm table-striped"><thead class="table-warning"><tr>
+        <th>POSID</th><th>Vị trí</th><th>Ngày</th><th>Ghi chú</th>
+      </tr></thead><tbody>`;
+      found.forEach(r => {
+        html += `<tr>
+          <td>${r["POSID"]}</td><td>${r["Vị trí"]}</td><td>${r["Ngày"]}</td><td>${r["Ghi chú"]}</td>
+        </tr>`;
+      });
+      html += `</tbody></table></div>`;
+    } else {
+      html = "<p class='text-danger'>Không tìm thấy vị trí cho POSID</p>";
+    }
+  }
+  document.getElementById("vitriResult").innerHTML = html;
+}
 </script>
 
-<!-- Bootstrap JS -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
