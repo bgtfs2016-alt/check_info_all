@@ -2,7 +2,7 @@
 <html lang="vi">
 <head>
   <meta charset="UTF-8">
-  <title>Tra cứu thông tin thiết bị</title>
+  <title>Tra cứu thông tin POS và Serial</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
   <style>
@@ -58,7 +58,7 @@
 </head>
 <body>
   <header>
-    <h2><i class="bi bi-hdd-network"></i> Hệ thống tra cứu thông tin thiết bị</h2>
+    <h2><i class="bi bi-hdd-network"></i> Hệ thống tra cứu thông tin</h2>
   </header>
 
   <div id="loaderOverlay">
@@ -70,12 +70,12 @@
     <ul class="nav nav-tabs" id="myTab" role="tablist">
       <li class="nav-item">
         <button class="nav-link active tab-posid" id="posid-tab" data-bs-toggle="tab" data-bs-target="#posid">
-          <i class="bi bi-building"></i> POSID
+          <i class="bi bi-building"></i> INFO POS VÀ SERIAL
         </button>
       </li>
       <li class="nav-item">
         <button class="nav-link tab-serial" id="serial-tab" data-bs-toggle="tab" data-bs-target="#serial">
-          <i class="bi bi-cpu"></i> Serial
+          <i class="bi bi-cpu"></i> INFO HẠN SERIAL
         </button>
       </li>
       <li class="nav-item">
@@ -166,6 +166,9 @@ async function loadData() {
 
     document.getElementById("loaderOverlay").style.display = "none";
     document.querySelectorAll("input, button").forEach(el => el.removeAttribute("disabled"));
+
+    // Gắn sự kiện Enter + clear
+    setupInputEvents();
   } catch (err) {
     document.getElementById("loaderOverlay").innerHTML = "<p class='text-danger'>Lỗi tải dữ liệu: " + err + "</p>";
   }
@@ -184,37 +187,39 @@ function exportToExcel(data, filename) {
 // POSID
 function searchPOSID() {
   const posid = document.getElementById("posidInput").value.trim();
+  if (!posid) {
+    document.getElementById("posidResult").innerHTML = "";
+    return;
+  }
   let html = "";
-  if (posid) {
-    const found = masterAssetData.filter(row =>
-      String(row["POSID"]).trim() === posid ||
-      String(row["POSID Cũ"]).trim() === posid
-    );
-    if (found.length > 0) {
-      html += `<h5>Kết quả MasterAsset:</h5>
-      <button class="btn btn-outline-primary mb-2" onclick='exportToExcel(${JSON.stringify(found)}, "MasterAsset_POSID")'>
-        <i class="bi bi-file-earmark-excel"></i> Xuất Excel
-      </button>
-      <div class="table-responsive"><table class="table table-bordered table-sm table-striped"><thead class="table-primary"><tr>
-        <th>POSID</th><th>POSID Cũ</th><th>ADDRESS</th><th>ADDRESS cũ</th>
-        <th>BGT Code</th><th>PAC DATE</th><th>Retrieval Date</th><th>HWID</th>
-        <th>CPU</th><th>Touchscreen</th><th>Printer</th><th>Scanner</th>
-        <th>KeyBoard</th><th>CDU</th><th>Checkwin</th><th>CISSCO</th>
-        <th>UPS</th><th>TV 1</th><th>TV 2</th>
-      </tr></thead><tbody>`;
-      found.forEach(r => {
-        html += `<tr>
-          <td>${r["POSID"]}</td><td>${r["POSID Cũ"]}</td><td>${r["ADDRESS"]}</td><td>${r["ADDRESS cũ"]}</td>
-          <td>${r["BGT Code"]}</td><td>${r["PAC DATE"]}</td><td>${r["Retrieval Date"]}</td><td>${r["HWID"]}</td>
-          <td>${r["CPU"]}</td><td>${r["Touchscreen"]}</td><td>${r["Printer"]}</td><td>${r["Scanner"]}</td>
-          <td>${r["KeyBoard"]}</td><td>${r["CDU"]}</td><td>${r["Checkwin"]}</td><td>${r["CISSCO"]}</td>
-          <td>${r["UPS"]}</td><td>${r["TV 1"]}</td><td>${r["TV 2"]}</td>
-        </tr>`;
-      });
-      html += `</tbody></table></div>`;
-    } else {
-      html = "<p class='text-danger'>Không tìm thấy POSID</p>";
-    }
+  const found = masterAssetData.filter(row =>
+    String(row["POSID"]).trim() === posid ||
+    String(row["POSID Cũ"]).trim() === posid
+  );
+  if (found.length > 0) {
+    html += `<h5>Kết quả MasterAsset:</h5>
+    <button class="btn btn-outline-primary mb-2" onclick='exportToExcel(${JSON.stringify(found)}, "MasterAsset_POSID")'>
+      <i class="bi bi-file-earmark-excel"></i> Xuất Excel
+    </button>
+    <div class="table-responsive"><table class="table table-bordered table-sm table-striped"><thead class="table-primary"><tr>
+      <th>POSID</th><th>POSID Cũ</th><th>ADDRESS</th><th>ADDRESS cũ</th>
+      <th>BGT Code</th><th>PAC DATE</th><th>Retrieval Date</th><th>HWID</th>
+      <th>CPU</th><th>Touchscreen</th><th>Printer</th><th>Scanner</th>
+      <th>KeyBoard</th><th>CDU</th><th>Checkwin</th><th>CISSCO</th>
+      <th>UPS</th><th>TV 1</th><th>TV 2</th>
+    </tr></thead><tbody>`;
+    found.forEach(r => {
+      html += `<tr>
+        <td>${r["POSID"]}</td><td>${r["POSID Cũ"]}</td><td>${r["ADDRESS"]}</td><td>${r["ADDRESS cũ"]}</td>
+        <td>${r["BGT Code"]}</td><td>${r["PAC DATE"]}</td><td>${r["Retrieval Date"]}</td><td>${r["HWID"]}</td>
+        <td>${r["CPU"]}</td><td>${r["Touchscreen"]}</td><td>${r["Printer"]}</td><td>${r["Scanner"]}</td>
+        <td>${r["KeyBoard"]}</td><td>${r["CDU"]}</td><td>${r["Checkwin"]}</td><td>${r["CISSCO"]}</td>
+        <td>${r["UPS"]}</td><td>${r["TV 1"]}</td><td>${r["TV 2"]}</td>
+      </tr>`;
+    });
+    html += `</tbody></table></div>`;
+  } else {
+    html = "<p class='text-danger'>Không tìm thấy POSID</p>";
   }
   document.getElementById("posidResult").innerHTML = html;
 }
@@ -222,30 +227,32 @@ function searchPOSID() {
 // Serial
 function searchSerial() {
   const serial = document.getElementById("serialInput").value.trim();
+  if (!serial) {
+    document.getElementById("serialResult").innerHTML = "";
+    return;
+  }
   let html = "";
-  if (serial) {
-    const found = expData.filter(row => String(row["Serial"]).trim() === serial);
-    if (found.length > 0) {
-      html += `<h5>Kết quả Exp:</h5>
-      <button class="btn btn-outline-success mb-2" onclick='exportToExcel(${JSON.stringify(found)}, "Exp_Serial")'>
-        <i class="bi bi-file-earmark-excel"></i> Xuất Excel
-      </button>
-      <div class="table-responsive"><table class="table table-bordered table-sm table-striped"><thead class="table-success"><tr>
-        <th>Loại thiết bị</th><th>Serial</th><th>Ngày sản xuất</th><th>Ngày đưa vào sử dụng lần đầu</th>
-        <th>Tình trạng thiết bị</th><th>Tình trạng ghi nhận</th><th>Số chứng thư giám định</th>
-        <th>Ngày giám định</th><th>Năm thay thế</th><th>Check hạn</th>
-      </tr></thead><tbody>`;
-      found.forEach(r => {
-        html += `<tr>
-          <td>${r["Loại thiết bị"]}</td><td>${r["Serial"]}</td><td>${r["Ngày sản xuất"]}</td><td>${r["Ngày đưa vào sử dụng lần đầu"]}</td>
-          <td>${r["Tình trạng thiết bị"]}</td><td>${r["Tình trạng ghi nhận"]}</td><td>${r["Số chứng thư giám định"]}</td>
-          <td>${r["Ngày giám định"]}</td><td>${r["Năm thay thế"]}</td><td>${r["Check hạn"]}</td>
-        </tr>`;
-      });
-      html += `</tbody></table></div>`;
-    } else {
-      html = "<p class='text-danger'>Không tìm thấy Serial</p>";
-    }
+  const found = expData.filter(row => String(row["Serial"]).trim() === serial);
+  if (found.length > 0) {
+    html += `<h5>Kết quả Exp:</h5>
+    <button class="btn btn-outline-success mb-2" onclick='exportToExcel(${JSON.stringify(found)}, "Exp_Serial")'>
+      <i class="bi bi-file-earmark-excel"></i> Xuất Excel
+    </button>
+    <div class="table-responsive"><table class="table table-bordered table-sm table-striped"><thead class="table-success"><tr>
+      <th>Loại thiết bị</th><th>Serial</th><th>Ngày sản xuất</th><th>Ngày đưa vào sử dụng lần đầu</th>
+      <th>Tình trạng thiết bị</th><th>Tình trạng ghi nhận</th><th>Số chứng thư giám định</th>
+      <th>Ngày giám định</th><th>Năm thay thế</th><th>Check hạn</th>
+    </tr></thead><tbody>`;
+    found.forEach(r => {
+      html += `<tr>
+        <td>${r["Loại thiết bị"]}</td><td>${r["Serial"]}</td><td>${r["Ngày sản xuất"]}</td><td>${r["Ngày đưa vào sử dụng lần đầu"]}</td>
+        <td>${r["Tình trạng thiết bị"]}</td><td>${r["Tình trạng ghi nhận"]}</td><td>${r["Số chứng thư giám định"]}</td>
+        <td>${r["Ngày giám định"]}</td><td>${r["Năm thay thế"]}</td><td>${r["Check hạn"]}</td>
+      </tr>`;
+    });
+    html += `</tbody></table></div>`;
+  } else {
+    html = "<p class='text-danger'>Không tìm thấy Serial</p>";
   }
   document.getElementById("serialResult").innerHTML = html;
 }
@@ -253,31 +260,54 @@ function searchSerial() {
 // Vị trí
 function searchVitri() {
   const posid = document.getElementById("vitriInput").value.trim();
+  if (!posid) {
+    document.getElementById("vitriResult").innerHTML = "";
+    return;
+  }
   let html = "";
-  if (posid) {
-    const found = vitriData.filter(row => String(row["POSID"]).trim() === posid);
-    if (found.length > 0) {
-      html += `<h5>Kết quả Vi_tri_month:</h5>
-      <button class="btn btn-outline-warning mb-2" onclick='exportToExcel(${JSON.stringify(found)}, "Vitri_POSID")'>
-        <i class="bi bi-file-earmark-excel"></i> Xuất Excel
-      </button>
-      <div class="table-responsive"><table class="table table-bordered table-sm table-striped"><thead class="table-warning"><tr>
-        <th>POSID</th><th>Vị trí</th><th>Ngày</th><th>Ghi chú</th>
-      </tr></thead><tbody>`;
-      found.forEach(r => {
-        html += `<tr>
-          <td>${r["POSID"]}</td><td>${r["Vị trí"]}</td><td>${r["Ngày"]}</td><td>${r["Ghi chú"]}</td>
-        </tr>`;
-      });
-      html += `</tbody></table></div>`;
-    } else {
-      html = "<p class='text-danger'>Không tìm thấy vị trí cho POSID</p>";
-    }
+  const found = vitriData.filter(row => String(row["POSID"]).trim() === posid);
+  if (found.length > 0) {
+    html += `<h5>Kết quả Vi_tri_month:</h5>
+    <button class="btn btn-outline-warning mb-2" onclick='exportToExcel(${JSON.stringify(found)}, "Vitri_POSID")'>
+      <i class="bi bi-file-earmark-excel"></i> Xuất Excel
+    </button>
+    <div class="table-responsive"><table class="table table-bordered table-sm table-striped"><thead class="table-warning"><tr>
+      <th>POSID</th><th>Vị trí</th><th>Ngày</th><th>Ghi chú</th>
+    </tr></thead><tbody>`;
+    found.forEach(r => {
+      html += `<tr>
+        <td>${r["POSID"]}</td><td>${r["Vị trí"]}</td><td>${r["Ngày"]}</td><td>${r["Ghi chú"]}</td>
+      </tr>`;
+    });
+    html += `</tbody></table></div>`;
+  } else {
+    html = "<p class='text-danger'>Không tìm thấy vị trí cho POSID</p>";
   }
   document.getElementById("vitriResult").innerHTML = html;
+}
+
+// Gắn Enter + clear
+function setupInputEvents() {
+  const map = {
+    posidInput: { fn: searchPOSID, result: "posidResult" },
+    serialInput: { fn: searchSerial, result: "serialResult" },
+    vitriInput: { fn: searchVitri, result: "vitriResult" }
+  };
+  Object.keys(map).forEach(id => {
+    const el = document.getElementById(id);
+    el.addEventListener("keydown", e => {
+      if (e.key === "Enter") map[id].fn();
+    });
+    el.addEventListener("input", e => {
+      if (!e.target.value.trim()) {
+        document.getElementById(map[id].result).innerHTML = "";
+      }
+    });
+  });
 }
 </script>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
 </body>
 </html>
