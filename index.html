@@ -2,119 +2,111 @@
 <html lang="vi">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Tra cứu POSID</title>
+  <title>Tra cứu POS - Supabase</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-  <style>
-    body { padding-top: 70px; padding-bottom: 60px; }
-    footer {
-      position: fixed;
-      bottom: 0; left: 0; right: 0;
-      background: #f8f9fa;
-      text-align: center;
-      padding: 10px;
-      border-top: 1px solid #ddd;
-    }
-    table { word-wrap: break-word; }
-  </style>
 </head>
-<body>
-  <!-- Navbar -->
-  <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
+<body class="d-flex flex-column min-vh-100">
+
+  <!-- Header -->
+  <nav class="navbar navbar-dark bg-dark">
     <div class="container-fluid">
-      <a class="navbar-brand" href="#">🔎 Tra cứu POSID</a>
+      <span class="navbar-brand mb-0 h1">📋 Tra cứu POS Tiền Giang</span>
     </div>
   </nav>
 
   <!-- Nội dung -->
-  <div class="container mt-4">
+  <main class="container my-4 flex-grow-1">
     <div class="card shadow">
-      <div class="card-header bg-primary text-white">Nhập POSID để tra cứu</div>
+      <div class="card-header bg-primary text-white">
+        🔍 Tìm kiếm POS_ID
+      </div>
       <div class="card-body">
         <div class="input-group mb-3">
-          <input type="text" id="searchInput" class="form-control" placeholder="Nhập POSID...">
-          <button class="btn btn-success" onclick="searchPOS()">Tìm kiếm</button>
+          <input type="text" id="posInput" class="form-control" placeholder="Nhập POS_ID (vd: 121000010075)">
+          <button class="btn btn-success" onclick="searchPOS()">Tìm</button>
         </div>
+
+        <!-- Bảng kết quả -->
         <div class="table-responsive">
           <table class="table table-bordered table-striped">
             <thead class="table-dark">
-              <tr id="tableHead"></tr>
+              <tr id="tableHeader"></tr>
             </thead>
             <tbody id="resultTable">
-              <tr><td colspan="100%" class="text-center">Chưa có dữ liệu</td></tr>
+              <tr><td colspan="5" class="text-center">Chưa có dữ liệu</td></tr>
             </tbody>
           </table>
         </div>
       </div>
     </div>
-  </div>
+  </main>
 
   <!-- Footer -->
-  <footer>
-    © 2025 Bản quyền - Tra cứu POSID
+  <footer class="bg-dark text-white text-center py-2 mt-auto">
+    © 2025 Tra cứu POSID Tiền Giang
   </footer>
 
-<script>
-  // Supabase config
-  const SUPABASE_URL = "https://oxbvzqdfltdaqwupafqh.supabase.co"; // 👉 thay bằng Project URL
-  const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im94YnZ6cWRmbHRkYXF3dXBhZnFoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTcwNDExODUsImV4cCI6MjA3MjYxNzE4NX0.gDYsSiPRHOL25jbENmXq4Jf6zIkR--dSaHi2F6M5-ko"; // 👉 thay bằng Anon Key
-  const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  <!-- JS -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    const SUPABASE_URL = "https://oxbvzqdfltdaqwupafqh.supabase.co";  
+    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im94YnZ6cWRmbHRkYXF3dXBhZnFoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTcwNDExODUsImV4cCI6MjA3MjYxNzE4NX0.gDYsSiPRHOL25jbENmXq4Jf6zIkR--dSaHi2F6M5-ko";  // 🔑 thay bằng Anon Key
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-  async function searchPOS() {
-  const posId = document.getElementById("searchInput").value.trim();
-  const tableHead = document.getElementById("tableHead");
-  const resultTable = document.getElementById("resultTable");
-
-  if (!posId) {
-    resultTable.innerHTML = `<tr><td colspan="100%" class="text-center">Vui lòng nhập POSID</td></tr>`;
-    return;
-  }
-
-  // Ép kiểu int vì pos_id là int8 trong Supabase
-  const { data, error } = await supabase
-    .from("replacetiengiang")
-    .select("*")
-    .eq("pos_id", parseInt(posId));
-
-  console.log("Tìm POSID:", posId);
-  console.log("Kết quả:", data);
-  console.log("Lỗi:", error);
-
-  if (error) {
-    resultTable.innerHTML = `<tr><td colspan="100%" class="text-danger">Lỗi: ${error.message}</td></tr>`;
-    return;
-  }
-
-  if (!data || data.length === 0) {
-    resultTable.innerHTML = `<tr><td colspan="100%" class="text-center">Không tìm thấy POSID</td></tr>`;
-    return;
-  }
-
-  // Hiển thị header (cột)
-  tableHead.innerHTML = "";
-  Object.keys(data[0]).forEach(key => {
-    tableHead.innerHTML += `<th>${key}</th>`;
-  });
-
-  // Hiển thị dữ liệu
-  resultTable.innerHTML = "";
-  data.forEach(row => {
-    let rowHtml = "<tr>";
-    Object.values(row).forEach(val => {
-      rowHtml += `<td>${val ?? ""}</td>`;
+    // Thêm sự kiện Enter để tìm
+    document.getElementById("posInput").addEventListener("keypress", function(e) {
+      if (e.key === "Enter") {
+        searchPOS();
+      }
     });
-    rowHtml += "</tr>";
-    resultTable.innerHTML += rowHtml;
-  });
-}
 
+    async function searchPOS() {
+      const keyword = document.getElementById("posInput").value.trim();
+      if (!keyword) {
+        alert("Vui lòng nhập POS_ID");
+        return;
+      }
 
-  // Enter để tìm
-  document.getElementById("searchInput").addEventListener("keypress", function(e) {
-    if (e.key === "Enter") searchPOS();
-  });
-</script>
+      const { data, error } = await supabase
+        .from("replacetiengiang")
+        .select("*")
+        .eq("pos_id", keyword);
+
+      const headerRow = document.getElementById("tableHeader");
+      const tbody = document.getElementById("resultTable");
+      headerRow.innerHTML = "";
+      tbody.innerHTML = "";
+
+      if (error) {
+        console.error("Lỗi:", error);
+        tbody.innerHTML = `<tr><td colspan="5" class="text-center text-danger">Lỗi truy vấn</td></tr>`;
+        return;
+      }
+
+      if (!data || data.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" class="text-center">Không tìm thấy dữ liệu</td></tr>`;
+        return;
+      }
+
+      // Tạo tiêu đề cột
+      Object.keys(data[0]).forEach(key => {
+        headerRow.innerHTML += `<th>${key}</th>`;
+      });
+
+      // Tạo dữ liệu dòng
+      data.forEach(row => {
+        let rowHTML = "<tr>";
+        Object.entries(row).forEach(([key, val]) => {
+          if (key === "location" && val) {
+            rowHTML += `<td><a href="${val}" target="_blank" class="text-primary">Xem bản đồ</a></td>`;
+          } else {
+            rowHTML += `<td>${val ?? ""}</td>`;
+          }
+        });
+        rowHTML += "</tr>";
+        tbody.innerHTML += rowHTML;
+      });
+    }
+  </script>
 </body>
 </html>
-
