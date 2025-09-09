@@ -62,48 +62,53 @@
   const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
   async function searchPOS() {
-    const posId = document.getElementById("searchInput").value.trim();
-    const tableHead = document.getElementById("tableHead");
-    const resultTable = document.getElementById("resultTable");
+  const posId = document.getElementById("searchInput").value.trim();
+  const tableHead = document.getElementById("tableHead");
+  const resultTable = document.getElementById("resultTable");
 
-    if (!posId) {
-      resultTable.innerHTML = `<tr><td colspan="100%" class="text-center">Vui lòng nhập POSID</td></tr>`;
-      return;
-    }
-
-    // Fetch từ Supabase
-    const { data, error } = await supabase
-      .from("replacetiengiang")
-      .select("*")
-      .eq("pos_id", posId);
-
-    if (error) {
-      resultTable.innerHTML = `<tr><td colspan="100%" class="text-danger">Lỗi: ${error.message}</td></tr>`;
-      return;
-    }
-
-    if (!data || data.length === 0) {
-      resultTable.innerHTML = `<tr><td colspan="100%" class="text-center">Không tìm thấy POSID</td></tr>`;
-      return;
-    }
-
-    // Hiển thị header (cột)
-    tableHead.innerHTML = "";
-    Object.keys(data[0]).forEach(key => {
-      tableHead.innerHTML += `<th>${key}</th>`;
-    });
-
-    // Hiển thị dữ liệu
-    resultTable.innerHTML = "";
-    data.forEach(row => {
-      let rowHtml = "<tr>";
-      Object.values(row).forEach(val => {
-        rowHtml += `<td>${val ?? ""}</td>`;
-      });
-      rowHtml += "</tr>";
-      resultTable.innerHTML += rowHtml;
-    });
+  if (!posId) {
+    resultTable.innerHTML = `<tr><td colspan="100%" class="text-center">Vui lòng nhập POSID</td></tr>`;
+    return;
   }
+
+  // Ép kiểu int vì pos_id là int8 trong Supabase
+  const { data, error } = await supabase
+    .from("replacetiengiang")
+    .select("*")
+    .eq("pos_id", parseInt(posId));
+
+  console.log("Tìm POSID:", posId);
+  console.log("Kết quả:", data);
+  console.log("Lỗi:", error);
+
+  if (error) {
+    resultTable.innerHTML = `<tr><td colspan="100%" class="text-danger">Lỗi: ${error.message}</td></tr>`;
+    return;
+  }
+
+  if (!data || data.length === 0) {
+    resultTable.innerHTML = `<tr><td colspan="100%" class="text-center">Không tìm thấy POSID</td></tr>`;
+    return;
+  }
+
+  // Hiển thị header (cột)
+  tableHead.innerHTML = "";
+  Object.keys(data[0]).forEach(key => {
+    tableHead.innerHTML += `<th>${key}</th>`;
+  });
+
+  // Hiển thị dữ liệu
+  resultTable.innerHTML = "";
+  data.forEach(row => {
+    let rowHtml = "<tr>";
+    Object.values(row).forEach(val => {
+      rowHtml += `<td>${val ?? ""}</td>`;
+    });
+    rowHtml += "</tr>";
+    resultTable.innerHTML += rowHtml;
+  });
+}
+
 
   // Enter để tìm
   document.getElementById("searchInput").addEventListener("keypress", function(e) {
@@ -112,3 +117,4 @@
 </script>
 </body>
 </html>
+
